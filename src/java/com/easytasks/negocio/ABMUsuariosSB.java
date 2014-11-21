@@ -7,6 +7,7 @@ package com.easytasks.negocio;
 
 import com.easytasks.dataTransferObjects.*;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
+import com.easytasks.negocio.excepciones.NoExisteEntidadException;
 import com.easytasks.persistencia.entidades.*;
 import com.easytasks.persistencia.persistencia.PersistenciaSB;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
@@ -17,6 +18,8 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
 
 /**
@@ -41,46 +44,67 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     }
 
     @Override
-    public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException{
+    public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException {
         try {
             Usuario u = aEntidadSB.transformarUsuario(dtoU);
             persistencia.agregarUsuario(u);
         } catch (EntityExistsException e) {
-              throw new ExisteEntidadException();
-        }
-        catch (PersistenceException p) {
-              throw new ExisteEntidadException();
-        }
-        catch (Exception e) {
-              throw new ExisteEntidadException();
+            throw new ExisteEntidadException();
+        } catch (PersistenceException p) {
+            throw new ExisteEntidadException();
+        } catch (Exception e) {
+            throw new ExisteEntidadException();
         }
 
     }
 
     @Override
-    public void modificarUsuario(DtoUsuario dtoU) {
-        Usuario u = aEntidadSB.transformarUsuario(dtoU);
-        u.setId(persistencia.buscarUsuario(dtoU.getNombreUsuario()).getId());
-        persistencia.modificarUsuario(u);
+    public void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException {
+
+        try {
+            Usuario u = aEntidadSB.transformarUsuario(dtoU);
+            u.setId(persistencia.buscarUsuario(dtoU.getNombreUsuario()).getId());
+            try {
+                persistencia.modificarUsuario(u);
+
+            } catch (Exception e) {
+                throw new NoExisteEntidadException("WTF", e);
+            }
+        } catch (NoResultException e) {
+            throw new NoExisteEntidadException();
+        }
+
     }
 
     @Override
-    public void borrarUsuario(String nombreUsuario) {
-        Usuario u = persistencia.buscarUsuario(nombreUsuario);
-        persistencia.borrarUsuario(u);
+    public void borrarUsuario(String nombreUsuario) throws NoExisteEntidadException {
+        try {
+            Usuario u = persistencia.buscarUsuario(nombreUsuario);
+            persistencia.borrarUsuario(u);
+        } catch (EntityNotFoundException e) {
+            throw new NoExisteEntidadException();
+        }
     }
 
     @Override
-    public void agregarContacto(String usuario, String contacto) {
-        Usuario u = persistencia.buscarUsuario(usuario);
-        Usuario c = persistencia.buscarUsuario(contacto);
-        u.getContactos().add(c);
-        persistencia.modificarUsuario(u);
+    public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException {
+        try {
+            Usuario u = persistencia.buscarUsuario(usuario);
+            Usuario c = persistencia.buscarUsuario(contacto);
+            u.getContactos().add(c);
+            persistencia.modificarUsuario(u);
+        } catch (EntityNotFoundException e) {
+            throw new NoExisteEntidadException();
+        }
     }
 
     @Override
-    public DtoUsuario buscarUsuario(String nombreusuario) {
-        DtoUsuario dto = aDtoSB.transformarUsuario(persistencia.buscarUsuario(nombreusuario));
-        return dto;
+    public DtoUsuario buscarUsuario(String nombreusuario) throws NoExisteEntidadException {
+        try {
+            DtoUsuario dto = aDtoSB.transformarUsuario(persistencia.buscarUsuario(nombreusuario));
+            return dto;
+        } catch (EntityNotFoundException e) {
+            throw new NoExisteEntidadException();
+        }
     }
 }

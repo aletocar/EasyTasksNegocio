@@ -21,7 +21,7 @@ public interface ABMUsuariosSBLocal {
 
     void agregarUsuario(DtoUsuario dtoU);
 
-    void borrarUsuario(DtoUsuario dtoU);
+    void borrarUsuario(String nombreUsuario);
 
     DtoUsuario buscarUsuario(String nombreusuario);
 

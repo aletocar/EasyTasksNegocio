@@ -51,8 +51,8 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     }
     
     @Override
-    public void borrarUsuario(DtoUsuario dtoU){
-        Usuario u = aEntidadSB.transformarUsuario(dtoU);
+    public void borrarUsuario(String nombreUsuario){
+        Usuario u = persistencia.buscarUsuario(nombreUsuario);
         persistencia.borrarUsuario(u);
     }
     

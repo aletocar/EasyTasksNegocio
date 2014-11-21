@@ -6,7 +6,7 @@
 
 package com.easytasks.negocio;
 
-import com.easytasks.dataTransferObjects.DtoContexto;
+import com.easytasks.negocio.excepciones.*;
 import com.easytasks.dataTransferObjects.DtoUsuario;
 import javax.ejb.Local;
 
@@ -17,9 +17,9 @@ import javax.ejb.Local;
 @Local
 public interface ABMUsuariosSBLocal {
 
-    void agregarContacto(DtoUsuario usuario, DtoUsuario contacto);
+    void agregarContacto(String usuario, String contacto);
 
-    void agregarUsuario(DtoUsuario dtoU);
+    void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException;
 
     void borrarUsuario(String nombreUsuario);
 

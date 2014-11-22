@@ -61,9 +61,9 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     }
 
     @Override
-    public void borrarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException {
+    public void borrarProyecto(String nombreProyecto, String nombreResponsable) throws NoExisteEntidadException {
         try {
-            responsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
+            Usuario responsable = persistencia.buscarUsuario(nombreResponsable);
             Proyecto p = persistencia.buscarProyecto(nombreProyecto, responsable);
             persistencia.borrarProyecto(p);
         } catch (EJBException | EntityNotFoundException e) {

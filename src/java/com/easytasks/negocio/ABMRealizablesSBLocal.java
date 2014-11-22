@@ -22,7 +22,7 @@ public interface ABMRealizablesSBLocal {
     
     void agregarProyecto(DtoProyecto dtoP) throws ExisteEntidadException;
 
-    void borrarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException;
+    void borrarProyecto(String nombreProyecto, String nombreResponsable) throws NoExisteEntidadException;
 
     DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException;
 

@@ -17,7 +17,7 @@ import javax.ejb.Local;
 @Local
 public interface ABMUsuariosSBLocal {
 
-    void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException;
+    void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException;
 
     void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException;
 
@@ -33,6 +33,6 @@ public interface ABMUsuariosSBLocal {
     
     void logout(String token) throws NoExisteEntidadException;
 
-    public boolean estaLogueado(String token);
+    public boolean estaLogueado(String token, String username);
     
 }

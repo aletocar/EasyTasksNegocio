@@ -92,16 +92,19 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
         try {
             Usuario u = persistencia.buscarUsuario(nombreUsuario);
             persistencia.borrarUsuario(u);
-        } catch (EntityNotFoundException e) {
+        } catch (EJBException | EntityNotFoundException e){
             throw new NoExisteEntidadException();
         }
     }
 
     @Override
-    public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException {
+    public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException {
         try {
             Usuario u = persistencia.buscarUsuario(usuario);
             Usuario c = persistencia.buscarUsuario(contacto);
+            if(u.getContactos().contains(c)){
+                throw new ExisteEntidadException("Ya existe el contacto");
+            }
             u.getContactos().add(c);
             persistencia.modificarUsuario(u);
         } catch (EntityNotFoundException e) {
@@ -129,6 +132,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
                 token = UUID.randomUUID().toString() + "-" + c.getTimeInMillis();
                 Token t = new Token();
                 t.setToken(token);
+                t.setUsuario(u);
                 persistencia.agregarToken(t);
             }
             return token;
@@ -150,10 +154,10 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     }
     
     @Override
-    public boolean estaLogueado(String token){
+    public boolean estaLogueado(String token, String username){
         try{
             Token t = persistencia.buscarToken(token);
-            return true;
+            return t.getUsuario().getNombreUsuario().equals(username);
         }catch(EJBException e){
             return false;
         }

@@ -42,11 +42,6 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     private TransformadorAEntidadSB aEntidadSB;
 
     @Override
-    public String chequeoDeVida() {
-        return "estoy vivo";
-    }
-
-    @Override
     public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException {
         try {
             Usuario u = aEntidadSB.transformarUsuario(dtoU);

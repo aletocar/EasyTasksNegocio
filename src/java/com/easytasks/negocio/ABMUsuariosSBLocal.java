@@ -25,8 +25,6 @@ public interface ABMUsuariosSBLocal {
 
     DtoUsuario buscarUsuario(String nombreusuario) throws NoExisteEntidadException;
 
-    String chequeoDeVida();
-
     void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException;
     
     String login(String username, String password) throws ExisteEntidadException, NoExisteEntidadException;

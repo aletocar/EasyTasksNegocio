@@ -10,6 +10,7 @@ import com.easytasks.dataTransferObjects.DtoProyecto;
 import com.easytasks.dataTransferObjects.DtoTarea;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
+import com.easytasks.persistencia.entidades.Usuario;
 import javax.ejb.Local;
 
 /**
@@ -21,9 +22,9 @@ public interface ABMRealizablesSBLocal {
     
     void agregarProyecto(DtoProyecto dtoP) throws ExisteEntidadException;
 
-    void borrarProyecto(String nombreProyecto) throws NoExisteEntidadException;
+    void borrarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException;
 
-    DtoProyecto buscarProyecto(String nombreProyecto) throws NoExisteEntidadException;
+    DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException;
 
     void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException;
     

@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.easytasks.negocio;
 
 import com.easytasks.dataTransferObjects.DtoProyecto;
@@ -40,12 +39,11 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
 
     @EJB
     private TransformadorAEntidadSB aEntidadSB;
-    
-    
+
     // <editor-fold defaultstate="collapsed" desc=" Proyecto ">
     @Override
     public void agregarProyecto(DtoProyecto dtoP) throws ExisteEntidadException {
-         try {
+        try {
             Proyecto p = aEntidadSB.transformarProyecto(dtoP);
             //Contexto c = p.getContexto();
             Usuario u = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
@@ -63,19 +61,21 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     }
 
     @Override
-    public void borrarProyecto(String nombreProyecto) throws NoExisteEntidadException {
-         try {
-            Proyecto p = persistencia.buscarProyecto(nombreProyecto);
+    public void borrarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException {
+        try {
+            responsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
+            Proyecto p = persistencia.buscarProyecto(nombreProyecto, responsable);
             persistencia.borrarProyecto(p);
-        } catch (EJBException | EntityNotFoundException e){
+        } catch (EJBException | EntityNotFoundException e) {
             throw new NoExisteEntidadException();
         }
     }
 
     @Override
-    public DtoProyecto buscarProyecto(String nombreProyecto) throws NoExisteEntidadException {
+    public DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException {
         try {
-            DtoProyecto dto = aDtoSB.transformarProyecto(persistencia.buscarProyecto(nombreProyecto));
+            responsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
+            DtoProyecto dto = aDtoSB.transformarProyecto(persistencia.buscarProyecto(nombreProyecto, responsable));
             return dto;
         } catch (EntityNotFoundException e) {
             throw new NoExisteEntidadException();
@@ -84,11 +84,13 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
 
     @Override
     public void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException {
-       Proyecto p2;
+        Proyecto p2;
         try {
             Proyecto p = aEntidadSB.transformarProyecto(dtoP);
+            Usuario responsable = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
+            p.setResponsable(responsable);
             try {
-                p2 = persistencia.buscarProyecto(dtoP.getNombre());
+                p2 = persistencia.buscarProyecto(dtoP.getNombre(), responsable);
             } catch (EJBException e) {
                 throw new NoExisteEntidadException(e.getMessage(), e);
             }
@@ -108,10 +110,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     }
 
     // </editor-fold>
-    
         // <editor-fold defaultstate="collapsed" desc=" Tarea ">
-
-    
     @Override
     public void agregarTarea(DtoTarea dtoT) throws ExisteEntidadException {
         try {
@@ -142,5 +141,4 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     }
 
     // </editor-fold>
-    
 }

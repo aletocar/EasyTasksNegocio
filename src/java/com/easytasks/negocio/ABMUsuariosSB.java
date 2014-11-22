@@ -9,14 +9,12 @@ import com.easytasks.dataTransferObjects.*;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
 import com.easytasks.persistencia.entidades.*;
-import com.easytasks.persistencia.persistencia.PersistenciaSB;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
 import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.NoResultException;
@@ -61,9 +59,17 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     @Override
     public void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException {
 
+        Usuario u2;
         try {
             Usuario u = aEntidadSB.transformarUsuario(dtoU);
-            u.setId(persistencia.buscarUsuario(dtoU.getNombreUsuario()).getId());
+            try {
+                u2 = persistencia.buscarUsuario(dtoU.getNombreUsuario());
+            } catch (EJBException e) {
+                throw new NoExisteEntidadException(e.getMessage(), e);
+            }
+            Long id = u2.getId();
+            u.setId(id);
+
             try {
                 persistencia.modificarUsuario(u);
 

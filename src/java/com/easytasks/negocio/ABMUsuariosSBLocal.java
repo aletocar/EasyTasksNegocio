@@ -29,4 +29,10 @@ public interface ABMUsuariosSBLocal {
 
     void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException;
     
+    String login(String username, String password) throws ExisteEntidadException, NoExisteEntidadException;
+    
+    void logout(String token) throws NoExisteEntidadException;
+
+    public boolean estaLogueado(String token);
+    
 }

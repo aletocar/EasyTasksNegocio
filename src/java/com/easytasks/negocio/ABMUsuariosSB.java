@@ -12,6 +12,11 @@ import com.easytasks.persistencia.entidades.*;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
 import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
@@ -111,6 +116,46 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
             return dto;
         } catch (EntityNotFoundException e) {
             throw new NoExisteEntidadException();
+        }
+    }
+
+    @Override
+    public String login(String username, String password) throws ExisteEntidadException, NoExisteEntidadException {
+        String token = "";
+        try {
+            Usuario u = persistencia.buscarUsuario(username);
+            if (u.getContraseña().equals(password)) {
+                Calendar c = Calendar.getInstance();
+                token = UUID.randomUUID().toString() + "-" + c.getTimeInMillis();
+                Token t = new Token();
+                t.setToken(token);
+                persistencia.agregarToken(t);
+            }
+            return token;
+        } catch (EJBException e) {
+            throw new NoExisteEntidadException("El nombre de usuario no es correcto");
+        } catch (PersistenceException p) {
+            throw new ExisteEntidadException("Tuvimos un error en nuestra base de datos, por favor intente nuevamente");
+        }
+    }
+
+    @Override
+    public void logout(String token) throws NoExisteEntidadException {
+        try {
+            Token t = persistencia.buscarToken(token);
+            persistencia.borrarToken(t);
+        } catch (EJBException | EntityNotFoundException e) {//Cuando tira NoResultException, el Bean de peristencia tira esta excepción, por lo que es necesario capturarla aca.
+            throw new NoExisteEntidadException("Ha ocurrido un error, por favor intente nuevamente");
+        }
+    }
+    
+    @Override
+    public boolean estaLogueado(String token){
+        try{
+            Token t = persistencia.buscarToken(token);
+            return true;
+        }catch(EJBException e){
+            return false;
         }
     }
 }

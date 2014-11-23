@@ -7,6 +7,8 @@ package com.easytasks.negocio;
 
 import com.easytasks.dataTransferObjects.DtoProyecto;
 import com.easytasks.dataTransferObjects.DtoTarea;
+import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
+import com.easytasks.negocio.excepciones.EntidadNoCreadaCorrectamenteException;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
 import com.easytasks.persistencia.entidades.Contexto;
@@ -16,6 +18,7 @@ import com.easytasks.persistencia.entidades.Usuario;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
 import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
+import java.util.List;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
@@ -42,22 +45,29 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
 
     // <editor-fold defaultstate="collapsed" desc=" Proyecto ">
     @Override
-    public void agregarProyecto(DtoProyecto dtoP) throws ExisteEntidadException {
-        try {
-            Proyecto p = aEntidadSB.transformarProyecto(dtoP);
-            //Contexto c = p.getContexto();
-            Usuario u = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
-            p.setResponsable(u);
-            //persistencia.agregarContexto(c);
-            persistencia.agregarProyecto(p);
-        } catch (EntityExistsException e) {
-            throw new ExisteEntidadException();
-        } catch (PersistenceException p) {
-            throw new ExisteEntidadException();
-        } catch (Exception e) {
-            throw new ExisteEntidadException();
+    public void agregarProyecto(DtoProyecto dtoP) throws ExisteEntidadException, EntidadNoCreadaCorrectamenteException {
+        if (dtoP.getTareas().size() > 0) {
+            throw new EntidadNoCreadaCorrectamenteException("Un proyecto debe crearse sin tareas asignadas.");
+        } else if (dtoP.getUsuarios().size() > 0) {
+            throw new EntidadNoCreadaCorrectamenteException("Un proyecto debe crearse sin usuarios asignados.");
+        } else {
+            try {
+                Proyecto p = aEntidadSB.transformarProyecto(dtoP);
+                Usuario u = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
+                Contexto c = persistencia.buscarContexto(p.getContexto().getNombre());
+                if(c!=null){
+                    p.setContexto(c);
+                }
+                p.setResponsable(u);
+                persistencia.agregarProyecto(p);
+            } catch (EntityExistsException e) {
+                throw new ExisteEntidadException();
+            } catch (PersistenceException p) {
+                throw new ExisteEntidadException();
+            } catch (Exception e) {
+                throw new ExisteEntidadException();
+            }
         }
-
     }
 
     @Override
@@ -83,45 +93,84 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     }
 
     @Override
-    public void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException {
+    public void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
         Proyecto p2;
-        try {
-            Proyecto p = aEntidadSB.transformarProyecto(dtoP);
-            Usuario responsable = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
-            p.setResponsable(responsable);
+        if (dtoP.getTareas().size() > 0) {
+            throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin tareas asignadas.");
+        } else if (dtoP.getUsuarios().size() > 0) {
+            throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin usuarios asignados.");
+        } else {
             try {
-                p2 = persistencia.buscarProyecto(dtoP.getNombre(), responsable);
-            } catch (EJBException e) {
-                throw new NoExisteEntidadException(e.getMessage(), e);
-            }
-            Long id = p2.getId();
-            p.setId(id);
+                Proyecto p = aEntidadSB.transformarProyecto(dtoP);
+                Usuario responsable = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
+                p.setResponsable(responsable);
+                try {
+                    p2 = persistencia.buscarProyecto(dtoP.getNombre(), responsable);
+                } catch (EJBException e) {
+                    throw new NoExisteEntidadException(e.getMessage(), e);
+                }
+                try {
+                    List<Usuario> listaUsuarios = persistencia.buscarUsuariosDeProyecto(p2.getNombre(), p2.getResponsable());
+                    p.setUsuarios(listaUsuarios);
+                    List<Tarea> listaTareas = persistencia.buscarTareasDeProyecto(p2);
+                    p.setTareas(listaTareas);
+                } catch (EJBException e) {
+                    throw new NoExisteEntidadException(e.getMessage());
+                }
+                Long id = p2.getId();
+                p.setId(id);
 
-            try {
-                persistencia.modificarProyecto(p);
+                try {
+                    persistencia.modificarProyecto(p);
 
-            } catch (Exception e) {
-                throw new NoExisteEntidadException("WTF", e);
+                } catch (Exception e) {
+                    throw new NoExisteEntidadException("WTF", e);
+                }
+            } catch (NoResultException e) {
+                throw new NoExisteEntidadException();
             }
-        } catch (NoResultException e) {
-            throw new NoExisteEntidadException();
         }
+    }
 
+    @Override
+    public void asignarUsuarioAProyecto(String nombreProyecto, String nombreResponsable, String nombreUsuario) throws NoExisteEntidadException {
+        try {
+            Usuario u = persistencia.buscarUsuario(nombreUsuario);
+            Usuario r = persistencia.buscarUsuario(nombreResponsable);
+            Proyecto p = persistencia.buscarProyecto(nombreProyecto, r);
+            List<Usuario> listaUsuarios = persistencia.buscarUsuariosDeProyecto(nombreProyecto, r);
+            listaUsuarios.add(u);
+            p.setUsuarios(listaUsuarios);
+            persistencia.modificarProyecto(p);
+        } catch (EJBException e) {
+            throw new NoExisteEntidadException(e.getMessage());
+        }
     }
 
     // </editor-fold>
-        // <editor-fold defaultstate="collapsed" desc=" Tarea ">
+    // <editor-fold defaultstate="collapsed" desc=" Tarea ">
     @Override
-    public void agregarTarea(DtoTarea dtoT) throws ExisteEntidadException {
-        try {
-            Tarea t = aEntidadSB.transformarTarea(dtoT);
-            persistencia.agregarTarea(t);
-        } catch (EntityExistsException e) {
-            throw new ExisteEntidadException();
-        } catch (PersistenceException p) {
-            throw new ExisteEntidadException();
-        } catch (Exception e) {
-            throw new ExisteEntidadException();
+    public void agregarTarea(DtoTarea dtoT) throws ExisteEntidadException, EntidadNoCreadaCorrectamenteException {
+        if (dtoT.getSubtareas().size() > 0) {
+            throw new EntidadNoCreadaCorrectamenteException("Una tarea debe crearse sin subtareas asignadas.");
+        }else if (dtoT.getListaResponsables().size()>0){
+            throw new EntidadNoCreadaCorrectamenteException("Una tarea debe crearse sin responsables asignados.");
+        }
+        else {
+            try {
+                Tarea t = aEntidadSB.transformarTarea(dtoT);
+                Proyecto p = t.getProyecto();
+                if(p == null){
+                   throw new EntidadNoCreadaCorrectamenteException("No se asignó proyecto a la tarea. Por favor asígnelo antes de crearla");
+                }
+                persistencia.agregarTarea(t);
+            } catch (EntityExistsException e) {
+                throw new ExisteEntidadException("Ya existe una tarea con este nombre para este proyecto.");
+            } catch (PersistenceException p) {
+                throw new ExisteEntidadException();
+            } catch (Exception e) {
+                throw new ExisteEntidadException();
+            }
         }
     }
 

@@ -17,15 +17,15 @@ import javax.ejb.Local;
 @Local
 public interface ABMUsuariosSBLocal {
 
-    void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException;
+    void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException, EntidadModificadaIncorrectamenteException;
 
-    void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException;
+    void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException, EntidadNoCreadaCorrectamenteException;
 
     void borrarUsuario(String nombreUsuario) throws NoExisteEntidadException;
 
     DtoUsuario buscarUsuario(String nombreusuario) throws NoExisteEntidadException;
 
-    void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException;
+    void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException;
     
     String login(String username, String password) throws ExisteEntidadException, NoExisteEntidadException;
     

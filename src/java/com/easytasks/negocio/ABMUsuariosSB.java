@@ -6,6 +6,8 @@
 package com.easytasks.negocio;
 
 import com.easytasks.dataTransferObjects.*;
+import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
+import com.easytasks.negocio.excepciones.EntidadNoCreadaCorrectamenteException;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
 import com.easytasks.persistencia.entidades.*;
@@ -13,9 +15,8 @@ import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
 import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
@@ -42,44 +43,51 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     private TransformadorAEntidadSB aEntidadSB;
 
     @Override
-    public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException {
-        try {
-            Usuario u = aEntidadSB.transformarUsuario(dtoU);
-            persistencia.agregarUsuario(u);
-        } catch (EntityExistsException e) {
-            throw new ExisteEntidadException();
-        } catch (PersistenceException p) {
-            throw new ExisteEntidadException();
-        } catch (Exception e) {
-            throw new ExisteEntidadException();
+    public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException, EntidadNoCreadaCorrectamenteException {
+        if (dtoU.getContactos().size() > 0) {
+            throw new EntidadNoCreadaCorrectamenteException("No se puede agregar un usuario con contactos. Utilice la función correspondiente");
+        } else {
+            try {
+                Usuario u = aEntidadSB.transformarUsuario(dtoU);
+                persistencia.agregarUsuario(u);
+            } catch (EntityExistsException e) {
+                throw new ExisteEntidadException();
+            } catch (PersistenceException p) {
+                throw new ExisteEntidadException();
+            } catch (Exception e) {
+                throw new ExisteEntidadException();
+            }
         }
-
     }
 
     @Override
-    public void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException {
-
-        Usuario u2;
-        try {
-            Usuario u = aEntidadSB.transformarUsuario(dtoU);
+    public void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
+        if (dtoU.getContactos().size() > 0) {
+            throw new EntidadModificadaIncorrectamenteException("no se puede modificar los contactos en un usuario. Utilice la funcion correspondiente");
+        } else {
+            Usuario u2;
             try {
-                u2 = persistencia.buscarUsuario(dtoU.getNombreUsuario());
-            } catch (EJBException e) {
-                throw new NoExisteEntidadException(e.getMessage(), e);
-            }
-            Long id = u2.getId();
-            u.setId(id);
+                Usuario u = aEntidadSB.transformarUsuario(dtoU);
+                try {
+                    u2 = persistencia.buscarUsuario(dtoU.getNombreUsuario());
+                    List<Usuario> listaContactos = persistencia.buscarContactos(u2);
+                    u.setContactos(listaContactos);
+                } catch (EJBException e) {
+                    throw new NoExisteEntidadException(e.getMessage(), e);
+                }
+                Long id = u2.getId();
+                u.setId(id);
+                
+                try {
+                    persistencia.modificarUsuario(u);
 
-            try {
-                persistencia.modificarUsuario(u);
-
-            } catch (Exception e) {
-                throw new NoExisteEntidadException("WTF", e);
+                } catch (Exception e) {
+                    throw new NoExisteEntidadException("WTF", e);
+                }
+            } catch (NoResultException e) {
+                throw new NoExisteEntidadException();
             }
-        } catch (NoResultException e) {
-            throw new NoExisteEntidadException();
         }
-
     }
 
     @Override
@@ -87,17 +95,20 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
         try {
             Usuario u = persistencia.buscarUsuario(nombreUsuario);
             persistencia.borrarUsuario(u);
-        } catch (EJBException | EntityNotFoundException e){
+        } catch (EJBException | EntityNotFoundException e) {
             throw new NoExisteEntidadException();
         }
     }
 
     @Override
-    public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException {
+    public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException, EntidadModificadaIncorrectamenteException {
+        if(usuario.equals(contacto)){
+            throw new EntidadModificadaIncorrectamenteException("No puede agregarse a ud mismo como contacto.");
+        }
         try {
             Usuario u = persistencia.buscarUsuario(usuario);
             Usuario c = persistencia.buscarUsuario(contacto);
-            if(u.getContactos().contains(c)){
+            if (u.getContactos().contains(c)) {
                 throw new ExisteEntidadException("Ya existe el contacto");
             }
             u.getContactos().add(c);
@@ -147,13 +158,13 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
             throw new NoExisteEntidadException("Ha ocurrido un error, por favor intente nuevamente");
         }
     }
-    
+
     @Override
-    public boolean estaLogueado(String token, String username){
-        try{
+    public boolean estaLogueado(String token, String username) {
+        try {
             Token t = persistencia.buscarToken(token);
             return t.getUsuario().getNombreUsuario().equals(username);
-        }catch(EJBException e){
+        } catch (EJBException e) {
             return false;
         }
     }

@@ -34,13 +34,13 @@ import javax.persistence.PersistenceException;
  */
 @Stateless
 public class ABMRealizablesSB implements ABMRealizablesSBLocal {
-
+    
     @EJB
     private PersistenciaSBLocal persistencia;
-
+    
     @EJB
     private TransformadorADtoSB aDtoSB;
-
+    
     @EJB
     private TransformadorAEntidadSB aEntidadSB;
 
@@ -70,7 +70,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             }
         }
     }
-
+    
     @Override
     public void borrarProyecto(String nombreProyecto, String nombreResponsable) throws NoExisteEntidadException {
         try {
@@ -81,7 +81,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             throw new NoExisteEntidadException();
         }
     }
-
+    
     @Override
     public DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException {
         try {
@@ -92,7 +92,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             throw new NoExisteEntidadException();
         }
     }
-
+    
     @Override
     public void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
         Proyecto p2;
@@ -120,10 +120,10 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 }
                 Long id = p2.getId();
                 p.setId(id);
-
+                
                 try {
                     persistencia.modificarProyecto(p);
-
+                    
                 } catch (Exception e) {
                     throw new NoExisteEntidadException("WTF", e);
                 }
@@ -132,7 +132,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             }
         }
     }
-
+    
     @Override
     public void asignarUsuarioAProyecto(String nombreProyecto, String nombreResponsable, String nombreUsuario) throws NoExisteEntidadException {
         try {
@@ -175,7 +175,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             }
         }
     }
-
+    
     @Override
     public void borrarTarea(String nombreTarea, String nombreProyecto, String nombreResponsable, String nombreEliminador) throws NoExisteEntidadException, EntidadEliminadaIncorrectamenteException {
         try {
@@ -183,7 +183,13 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             Proyecto p = persistencia.buscarProyecto(nombreProyecto, responsable);
             Usuario eliminador = persistencia.buscarUsuario(nombreEliminador);
             Tarea t = persistencia.buscarTarea(nombreTarea, p);
-            if (t.getListaResponsables().contains(eliminador)) {
+            if (t.getListaResponsables().contains(eliminador) || p.getResponsable().equals(eliminador)) {
+                for (int i = t.getSubtareas().size() - 1; i >= 0; i--) {
+                    Tarea ta = t.getSubtareas().get(i);
+                    t.getSubtareas().remove(ta);
+                    persistencia.modificarTarea(t);
+                    borrarTarea(ta.getNombre(), nombreProyecto, nombreResponsable, nombreEliminador);
+                }
                 persistencia.borrarTarea(t);
             } else {
                 throw new EntidadEliminadaIncorrectamenteException("El usuario que elimina la tarea debe ser responsable de ella");
@@ -192,12 +198,12 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             throw new NoExisteEntidadException("No se encontró la tarea a borrar");
         }
     }
-
+    
     @Override
     public DtoTarea buscarTarea(String nombreTarea) throws NoExisteEntidadException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
+    
     @Override
     public void modificarTarea(DtoTarea dtoT, String nombreUsuarioModificador) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
         Tarea t2;
@@ -226,12 +232,12 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 }
                 Long id = t2.getId();
                 t.setId(id);
-
+                
                 Usuario modificador = persistencia.buscarUsuario(nombreUsuarioModificador);
                 if (t.getListaResponsables().contains(modificador)) {
                     try {
                         persistencia.modificarTarea(t);
-
+                        
                     } catch (Exception e) {
                         throw new NoExisteEntidadException("WTF", e);
                     }

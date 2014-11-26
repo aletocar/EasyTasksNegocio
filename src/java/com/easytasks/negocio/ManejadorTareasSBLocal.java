@@ -3,12 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.easytasks.negocio;
 
+import com.easytasks.dataTransferObjects.DtoTarea;
 import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
-import com.easytasks.persistencia.entidades.Tarea;
 import java.util.List;
 import javax.ejb.Local;
 
@@ -18,17 +17,19 @@ import javax.ejb.Local;
  */
 @Local
 public interface ManejadorTareasSBLocal {
-    
-    void agregarSubTarea(String nombreTareaPadre, String nombreTareaHijo, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario) throws EntidadModificadaIncorrectamenteException;
-    
-    void agregarResponsable(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario) throws EntidadModificadaIncorrectamenteException;
-    
-    void delegarTarea(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario, String nombreUsuarioDelegar) throws EntidadModificadaIncorrectamenteException;
-    
-    void completarTarea(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException;
-    
-    List<Tarea> consultarTareasRealizadas(String nombreUsuario) throws NoExisteEntidadException;
 
-    List<Tarea> consultarTareasPendientes(String nombreUsuario) throws NoExisteEntidadException;
+    void agregarSubTarea(String nombreTareaPadre, String nombreTareaHijo, String nombreProyecto, String nombreUsuarioResponsable) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException;
+
+    void agregarResponsable(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario, String nombreUsuarioAAgregar) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException;
+
+    void delegarTarea(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuarioActual, String nombreUsuarioDelegar) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException;
+
+    void completarTarea(String nombreTarea, String nombreProyecto, String nombreUsuarioResponsable, String nombreUsuario) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException;
+
+    List<DtoTarea> consultarTareasRealizadas(String nombreUsuario) throws NoExisteEntidadException;
+
+    List<DtoTarea> consultarTareasPendientes(String nombreUsuario) throws NoExisteEntidadException;
+
+    List<DtoTarea> consultarTareasRealizadasResponsable(String nombreUsuario) throws NoExisteEntidadException;
 
 }

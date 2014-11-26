@@ -14,13 +14,20 @@ import com.easytasks.persistencia.entidades.*;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
 import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
+import com.easytasks.social.interfaces.SocialSBLocal;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
+import javax.naming.InitialContext;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.NoResultException;
@@ -41,6 +48,9 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
 
     @EJB
     private TransformadorAEntidadSB aEntidadSB;
+
+    @EJB(beanName = "FacebookSB")
+    private SocialSBLocal social;
 
     @Override
     public void agregarUsuario(DtoUsuario dtoU) throws ExisteEntidadException, EntidadNoCreadaCorrectamenteException {
@@ -77,7 +87,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
                 }
                 Long id = u2.getId();
                 u.setId(id);
-                
+
                 try {
                     persistencia.modificarUsuario(u);
 
@@ -102,7 +112,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
 
     @Override
     public void agregarContacto(String usuario, String contacto) throws NoExisteEntidadException, ExisteEntidadException, EntidadModificadaIncorrectamenteException {
-        if(usuario.equals(contacto)){
+        if (usuario.equals(contacto)) {
             throw new EntidadModificadaIncorrectamenteException("No puede agregarse a ud mismo como contacto.");
         }
         try {
@@ -168,4 +178,47 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
             return false;
         }
     }
+
+    @Override
+    public String conectar(String nombreUsuario, String redSocial) {
+        try {
+            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+        } catch (NamingException ex) {
+            return "Error en la conexion con la red social. Parece no estar disponible para nuestro sistema";
+        }
+        return social.connect(nombreUsuario);
+    }
+
+    @Override
+    public void ingresarPin(String nombreUsuario, String pin) {
+        
+        social.ingresarPin(nombreUsuario, pin);
+        postear(nombreUsuario, pin, "He conectado mi cuenta a Easy Tasks! La mejor manera de admin mis tareas");
+
+    }
+
+    @Override
+    public void postear(String nombreUsuario, String post, 
+            String redSocial) {
+        try {
+            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+        } catch (NamingException ex) {
+           //TODO: VER ESTO
+        }
+        social.post(nombreUsuario, post);
+    }
+    
+    @Override
+    public String desconectar(String nombreUsuario, String redSocial) {
+        
+        try {
+            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+        } catch (NamingException ex) {
+            return "Error al querer desconectar Twitter del sistema";
+        }
+        return social.disconnect(nombreUsuario);
+        
+    }
+    
+    
 }

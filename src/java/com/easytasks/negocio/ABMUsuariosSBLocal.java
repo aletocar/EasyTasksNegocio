@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.easytasks.negocio;
 
 import com.easytasks.negocio.excepciones.*;
@@ -26,11 +25,19 @@ public interface ABMUsuariosSBLocal {
     DtoUsuario buscarUsuario(String nombreusuario) throws NoExisteEntidadException;
 
     void modificarUsuario(DtoUsuario dtoU) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException;
-    
+
     String login(String username, String password) throws ExisteEntidadException, NoExisteEntidadException;
-    
+
     void logout(String token) throws NoExisteEntidadException;
 
-    public boolean estaLogueado(String token, String username);
+    boolean estaLogueado(String token, String username);
+
+    String conectar(String nombreUsuario,String redSocial);
+
+    void ingresarPin(String nombreUsuario,String pin);
+
+    void postear(String nombreUsuario,String post, String redSocial);
     
+    String desconectar(String nombreUsuario, String redSocial);
+
 }

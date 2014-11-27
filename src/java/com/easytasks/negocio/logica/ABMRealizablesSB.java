@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.easytasks.negocio;
+package com.easytasks.negocio.logica;
 
 import com.easytasks.dataTransferObjects.DtoProyecto;
 import com.easytasks.dataTransferObjects.DtoTarea;
@@ -18,8 +18,8 @@ import com.easytasks.persistencia.entidades.Proyecto;
 import com.easytasks.persistencia.entidades.Tarea;
 import com.easytasks.persistencia.entidades.Usuario;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
-import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
-import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
+import com.easytasks.negocio.transformadores.TransformadorADtoSBLocal;
+import com.easytasks.negocio.transformadores.TransformadorAEntidadSBLocal;
 import java.util.List;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
@@ -40,10 +40,10 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
     private PersistenciaSBLocal persistencia;
 
     @EJB
-    private TransformadorADtoSB aDtoSB;
+    private TransformadorADtoSBLocal aDtoSB;
 
     @EJB
-    private TransformadorAEntidadSB aEntidadSB;
+    private TransformadorAEntidadSBLocal aEntidadSB;
 
     // <editor-fold defaultstate="collapsed" desc=" Proyecto ">
     @Override

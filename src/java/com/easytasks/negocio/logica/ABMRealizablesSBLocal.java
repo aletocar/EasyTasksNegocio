@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.easytasks.negocio;
+package com.easytasks.negocio.logica;
 
 import com.easytasks.dataTransferObjects.DtoProyecto;
 import com.easytasks.dataTransferObjects.DtoTarea;

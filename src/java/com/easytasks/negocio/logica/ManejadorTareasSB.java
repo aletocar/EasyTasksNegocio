@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.easytasks.negocio;
+package com.easytasks.negocio.logica;
 
 import com.easytasks.dataTransferObjects.DtoTarea;
 import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
@@ -12,7 +12,7 @@ import com.easytasks.persistencia.entidades.Proyecto;
 import com.easytasks.persistencia.entidades.Tarea;
 import com.easytasks.persistencia.entidades.Usuario;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
-import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
+import com.easytasks.negocio.transformadores.TransformadorADtoSBLocal;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ejb.EJB;
@@ -30,7 +30,7 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
     private PersistenciaSBLocal persistencia;
 
     @EJB
-    private TransformadorADtoSB aDtoSB;
+    private TransformadorADtoSBLocal aDtoSB;
 
     @Override
     public void agregarSubTarea(String nombreTareaPadre, String nombreTareaHijo, String nombreProyecto, String nombreUsuarioResponsable) throws EntidadModificadaIncorrectamenteException, NoExisteEntidadException {

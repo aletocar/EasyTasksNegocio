@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.easytasks.negocio;
+package com.easytasks.negocio.logica;
 
 import com.easytasks.dataTransferObjects.*;
 import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
@@ -12,8 +12,8 @@ import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
 import com.easytasks.persistencia.entidades.*;
 import com.easytasks.persistencia.persistencia.PersistenciaSBLocal;
-import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
-import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
+import com.easytasks.negocio.transformadores.TransformadorADtoSBLocal;
+import com.easytasks.negocio.transformadores.TransformadorAEntidadSBLocal;
 import com.easytasks.social.interfaces.SocialSBLocal;
 import java.util.Calendar;
 import java.util.List;
@@ -39,10 +39,10 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     private PersistenciaSBLocal persistencia;
 
     @EJB
-    private TransformadorADtoSB aDtoSB;
+    private TransformadorADtoSBLocal aDtoSB;
 
     @EJB
-    private TransformadorAEntidadSB aEntidadSB;
+    private TransformadorAEntidadSBLocal aEntidadSB;
 
     @EJB(beanName = "TwitterSB")//Estamos obligados a setear el bean por defecto
     private SocialSBLocal social;

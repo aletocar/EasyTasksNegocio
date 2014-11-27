@@ -36,7 +36,7 @@ public interface ABMUsuariosSBLocal {
 
     void ingresarPin(String nombreUsuario,String pin);
 
-    void postear(String nombreUsuario,String post, String redSocial);
+    void postear(String nombreUsuario,String post, String redSocial) ;
     
     String desconectar(String nombreUsuario, String redSocial);
 

@@ -12,8 +12,7 @@ import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteExcepti
 import com.easytasks.negocio.excepciones.EntidadNoCreadaCorrectamenteException;
 import com.easytasks.negocio.excepciones.ExisteEntidadException;
 import com.easytasks.negocio.excepciones.NoExisteEntidadException;
-import com.easytasks.persistencia.entidades.Proyecto;
-import com.easytasks.persistencia.entidades.Usuario;
+import com.easytasks.dataTransferObjects.DtoUsuario;
 import javax.ejb.Local;
 
 /**
@@ -27,7 +26,7 @@ public interface ABMRealizablesSBLocal {
 
     void borrarProyecto(String nombreProyecto, String nombreResponsable) throws NoExisteEntidadException;
 
-    DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException;
+    DtoProyecto buscarProyecto(String nombreProyecto, DtoUsuario responsable) throws NoExisteEntidadException;
 
     void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException;
 
@@ -35,7 +34,7 @@ public interface ABMRealizablesSBLocal {
 
     void borrarTarea(String nombreTarea, String nombreProyecto, String nombreResponsable, String nombreEliminador) throws NoExisteEntidadException, EntidadEliminadaIncorrectamenteException;
 
-    DtoTarea buscarTarea(String nombreTarea) throws NoExisteEntidadException;
+    DtoTarea buscarTarea(String nombreTarea, String nombreProyecto, DtoUsuario responsable) throws NoExisteEntidadException;
 
     void modificarTarea(DtoTarea dtoT, String nombreUsuarioModificador) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException;
 

@@ -16,17 +16,12 @@ import com.easytasks.persistencia.transformadores.TransformadorADtoSB;
 import com.easytasks.persistencia.transformadores.TransformadorAEntidadSB;
 import com.easytasks.social.interfaces.SocialSBLocal;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.naming.InitialContext;
-import javax.naming.NameClassPair;
-import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
@@ -49,7 +44,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     @EJB
     private TransformadorAEntidadSB aEntidadSB;
 
-    @EJB(beanName = "FacebookSB")
+    @EJB(beanName = "TwitterSB")//Estamos obligados a setear el bean por defecto
     private SocialSBLocal social;
 
     @Override
@@ -61,11 +56,11 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
                 Usuario u = aEntidadSB.transformarUsuario(dtoU);
                 persistencia.agregarUsuario(u);
             } catch (EntityExistsException e) {
-                throw new ExisteEntidadException();
-            } catch (PersistenceException p) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ya existe un usuario con ese nombre de usuario.", e);
+            } catch (PersistenceException e) {
+                throw new ExisteEntidadException("Ocurrió un problema al agregar el usuario. Por favor intente nuevamente", e);
             } catch (Exception e) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ocurrió un problema inesperado al agregar el usuario. Por favor intente nuevamente", e);
             }
         }
     }
@@ -92,10 +87,10 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
                     persistencia.modificarUsuario(u);
 
                 } catch (Exception e) {
-                    throw new NoExisteEntidadException("WTF", e);
+                    throw new NoExisteEntidadException("No se pudo modificar el usuario. Por favor intente nuevamente", e);
                 }
             } catch (NoResultException e) {
-                throw new NoExisteEntidadException();
+                throw new NoExisteEntidadException("No se encontró el usuario a modificar", e);
             }
         }
     }
@@ -104,9 +99,13 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     public void borrarUsuario(String nombreUsuario) throws NoExisteEntidadException {
         try {
             Usuario u = persistencia.buscarUsuario(nombreUsuario);
+            if(u!=null){
             persistencia.borrarUsuario(u);
+            }else{
+                throw new NoExisteEntidadException("No se encontró el usuario a borrar");
+            }
         } catch (EJBException | EntityNotFoundException e) {
-            throw new NoExisteEntidadException();
+            throw new NoExisteEntidadException("Ocurrió un error al borrar el usuario. Por favor intente nuevamente", e);
         }
     }
 
@@ -124,7 +123,9 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
             u.getContactos().add(c);
             persistencia.modificarUsuario(u);
         } catch (EntityNotFoundException e) {
-            throw new NoExisteEntidadException();
+            throw new NoExisteEntidadException("No se encontró el usuario.", e);
+        } catch(EJBException e){
+            throw new EntidadModificadaIncorrectamenteException("No se pudo agregar el contacto. Por favor, intente nuevamente", e);
         }
     }
 
@@ -134,7 +135,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
             DtoUsuario dto = aDtoSB.transformarUsuario(persistencia.buscarUsuario(nombreusuario));
             return dto;
         } catch (EntityNotFoundException e) {
-            throw new NoExisteEntidadException();
+            throw new NoExisteEntidadException("No se encontró el usuario");
         }
     }
 
@@ -151,11 +152,14 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
                 t.setUsuario(u);
                 persistencia.agregarToken(t);
             }
+            else{
+                throw new ExisteEntidadException("La contraseña ingresada no corresponde con el nombre de usuario. Por favor intente nuevamente");
+            }
             return token;
         } catch (EJBException e) {
-            throw new NoExisteEntidadException("El nombre de usuario no es correcto");
-        } catch (PersistenceException p) {
-            throw new ExisteEntidadException("Tuvimos un error en nuestra base de datos, por favor intente nuevamente");
+            throw new NoExisteEntidadException("El nombre de usuario no es correcto", e);
+        } catch (PersistenceException p) {//Se da cuando no se puede agregar el token
+            throw new ExisteEntidadException("Tuvimos un error en nuestra base de datos, por favor intente nuevamente", p);
         }
     }
 
@@ -164,7 +168,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
         try {
             Token t = persistencia.buscarToken(token);
             persistencia.borrarToken(t);
-        } catch (EJBException | EntityNotFoundException e) {//Cuando tira NoResultException, el Bean de peristencia tira esta excepción, por lo que es necesario capturarla aca.
+        } catch (EJBException | EntityNotFoundException e) {
             throw new NoExisteEntidadException("Ha ocurrido un error, por favor intente nuevamente");
         }
     }
@@ -182,7 +186,7 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     @Override
     public String conectar(String nombreUsuario, String redSocial) {
         try {
-            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+            social = (SocialSBLocal) InitialContext.doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
         } catch (NamingException ex) {
             return "Error en la conexion con la red social. Parece no estar disponible para nuestro sistema";
         }
@@ -190,31 +194,33 @@ public class ABMUsuariosSB implements ABMUsuariosSBLocal {
     }
 
     @Override
-    public void ingresarPin(String nombreUsuario, String pin) {
+    public void ingresarPin(String nombreUsuario, String pin){
         
         social.ingresarPin(nombreUsuario, pin);
-        postear(nombreUsuario, pin, "He conectado mi cuenta a Easy Tasks! La mejor manera de admin mis tareas");
+        postear(nombreUsuario, pin, "He conectado mi cuenta a Easy Tasks! La mejor manera de administrar mis tareas");
+        
 
     }
 
     @Override
     public void postear(String nombreUsuario, String post, 
-            String redSocial) {
+            String redSocial){
         try {
-            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+            social = (SocialSBLocal) InitialContext.doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+            social.post(nombreUsuario, post);
         } catch (NamingException ex) {
-           //TODO: VER ESTO
+           //No hay nada que podamos hacer para corregirlo.
         }
-        social.post(nombreUsuario, post);
+        
     }
     
     @Override
     public String desconectar(String nombreUsuario, String redSocial) {
         
         try {
-            social = (SocialSBLocal) new InitialContext().doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
+            social = (SocialSBLocal) InitialContext.doLookup("java:global/EasyTasks/EasyTasksSocial/" + redSocial + "SB");
         } catch (NamingException ex) {
-            return "Error al querer desconectar Twitter del sistema";
+            return "Error al querer desconectar " + redSocial + " del sistema";
         }
         return social.disconnect(nombreUsuario);
         

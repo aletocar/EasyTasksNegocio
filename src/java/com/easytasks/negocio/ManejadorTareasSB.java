@@ -65,7 +65,7 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
 
             }
         } catch (EJBException e) {
-            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados");
+            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados", e);
         }
     }
 
@@ -102,7 +102,7 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
                 }
             }
         } catch (EJBException e) {
-            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados");
+            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados", e);
         }
     }
 
@@ -152,7 +152,7 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
                 }
             }
         } catch (EJBException e) {
-            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados");
+            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados", e);
         }
     }
 
@@ -189,27 +189,31 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
                 }
             }
         } catch (EJBException e) {
-            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados");
+            throw new NoExisteEntidadException("No se encontró alguno de los objetos indicados", e);
         }
     }
 
     @Override
     public List<DtoTarea> consultarTareasRealizadas(String nombreUsuario) throws NoExisteEntidadException {
         Usuario u;
-
+        List<DtoTarea> retorno = new ArrayList<>();
         try {
             u = persistencia.buscarUsuario(nombreUsuario);
             List<Tarea> tareasCompletadas = persistencia.buscarTareasCompletadasPorUsuario(u);
-            List<DtoTarea> retorno = new ArrayList<>();
+
             for (Tarea t : tareasCompletadas) {
                 assert (t.isCompletado());
                 DtoTarea dto = aDtoSB.transformarTarea(t);
                 retorno.add(dto);
             }
-            return retorno;
         } catch (EJBException e) {
-            return null;
+            DtoTarea dto = new DtoTarea();
+            dto.setMessage("Ocurrió un error");
+            dto.setTransferOk(false);
+            retorno.add(dto);
         }
+        return retorno;
+
     }
 
     @Override
@@ -221,20 +225,23 @@ public class ManejadorTareasSB implements ManejadorTareasSBLocal {
     @Override
     public List<DtoTarea> consultarTareasRealizadasResponsable(String nombreUsuario) throws NoExisteEntidadException {
         Usuario u;
+        List<DtoTarea> retorno = new ArrayList<>();
 
         try {
             u = persistencia.buscarUsuario(nombreUsuario);
             List<Tarea> tareasCompletadas = persistencia.buscarTareasCompletadasResponsable(u);
-            List<DtoTarea> retorno = new ArrayList<>();
             for (Tarea t : tareasCompletadas) {
                 assert (t.isCompletado());
                 DtoTarea dto = aDtoSB.transformarTarea(t);
                 retorno.add(dto);
             }
-            return retorno;
         } catch (EJBException e) {
-            return null;
+            DtoTarea dto = new DtoTarea();
+            dto.setMessage("Ocurrió un error");
+            dto.setTransferOk(false);
+            retorno.add(dto);
         }
+        return retorno;
     }
 
 }

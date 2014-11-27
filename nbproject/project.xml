@@ -7,6 +7,7 @@
             <minimum-ant-version>1.6.5</minimum-ant-version>
             <included-library dirs="200">reference.DataTransferObjects.jar</included-library>
             <included-library dirs="100">reference.EasyTasksPersistenciaJPA.dist</included-library>
+            <included-library dirs="100">reference.EasyTasksSocial.dist</included-library>
             <source-roots>
                 <root id="src.dir" name="Source Packages"/>
             </source-roots>
@@ -25,6 +26,14 @@
             </reference>
             <reference>
                 <foreign-project>EasyTasksPersistenciaJPA</foreign-project>
+                <artifact-type>jar</artifact-type>
+                <script>build.xml</script>
+                <target>dist</target>
+                <clean-target>clean</clean-target>
+                <id>dist</id>
+            </reference>
+            <reference>
+                <foreign-project>EasyTasksSocial</foreign-project>
                 <artifact-type>jar</artifact-type>
                 <script>build.xml</script>
                 <target>dist</target>

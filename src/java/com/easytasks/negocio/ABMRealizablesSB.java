@@ -7,6 +7,7 @@ package com.easytasks.negocio;
 
 import com.easytasks.dataTransferObjects.DtoProyecto;
 import com.easytasks.dataTransferObjects.DtoTarea;
+import com.easytasks.dataTransferObjects.DtoUsuario;
 import com.easytasks.negocio.excepciones.EntidadEliminadaIncorrectamenteException;
 import com.easytasks.negocio.excepciones.EntidadModificadaIncorrectamenteException;
 import com.easytasks.negocio.excepciones.EntidadNoCreadaCorrectamenteException;
@@ -34,13 +35,13 @@ import javax.persistence.PersistenceException;
  */
 @Stateless
 public class ABMRealizablesSB implements ABMRealizablesSBLocal {
-    
+
     @EJB
     private PersistenciaSBLocal persistencia;
-    
+
     @EJB
     private TransformadorADtoSB aDtoSB;
-    
+
     @EJB
     private TransformadorAEntidadSB aEntidadSB;
 
@@ -62,77 +63,95 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 p.setResponsable(u);
                 persistencia.agregarProyecto(p);
             } catch (EntityExistsException e) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ya existe un proyecto con ese nombre", e);
             } catch (PersistenceException p) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ocurrió un problema al ingresar su proyecto. Por favor intente nuevamente", p);
             } catch (Exception e) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ocurrió un problema inesperado al ingresar su proyecto. Por favor intente nuevamente", e);
             }
         }
     }
-    
+
     @Override
     public void borrarProyecto(String nombreProyecto, String nombreResponsable) throws NoExisteEntidadException {
+        Usuario responsable;
+        Proyecto p;
         try {
-            Usuario responsable = persistencia.buscarUsuario(nombreResponsable);
-            Proyecto p = persistencia.buscarProyecto(nombreProyecto, responsable);
+            responsable = persistencia.buscarUsuario(nombreResponsable);
+            p = persistencia.buscarProyecto(nombreProyecto, responsable);
+        } catch (PersistenceException e) {
+            throw new NoExisteEntidadException("Ocurrió un problema con la base de datos. Por favor intente nuevamente", e);
+        }
+        try {
             persistencia.borrarProyecto(p);
         } catch (EJBException | EntityNotFoundException e) {
-            throw new NoExisteEntidadException();
+            throw new NoExisteEntidadException(e.getMessage(), e);
         }
     }
-    
+
     @Override
-    public DtoProyecto buscarProyecto(String nombreProyecto, Usuario responsable) throws NoExisteEntidadException {
+    public DtoProyecto buscarProyecto(String nombreProyecto, DtoUsuario responsable) throws NoExisteEntidadException {
         try {
-            responsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
-            DtoProyecto dto = aDtoSB.transformarProyecto(persistencia.buscarProyecto(nombreProyecto, responsable));
-            return dto;
+            
+            Usuario usuarioResponsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
+            Proyecto p = persistencia.buscarProyecto(nombreProyecto, usuarioResponsable);
+            if (responsable == null) {
+                throw new NoExisteEntidadException("No se encontró el usuario responsable.");
+            } else if (p == null) {
+                throw new NoExisteEntidadException("No se encontró el proyecto con ese nombre.");
+            } else {
+                DtoProyecto dto = aDtoSB.transformarProyecto(p);
+                return dto;
+            }
         } catch (EntityNotFoundException e) {
-            throw new NoExisteEntidadException();
+            throw new NoExisteEntidadException("No se encontro el proyecto", e);
         }
     }
-    
+
     @Override
     public void modificarProyecto(DtoProyecto dtoP) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
         Proyecto p2;
-        if (dtoP.getTareas().size() > 0) {
-            throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin tareas asignadas.");
-        } else if (dtoP.getUsuarios().size() > 0) {
-            throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin usuarios asignados.");
+        if (dtoP == null) {
+            throw new EntidadModificadaIncorrectamenteException("El proyecto a modificar está vacío.");
         } else {
-            try {
-                Proyecto p = aEntidadSB.transformarProyecto(dtoP);
-                Usuario responsable = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
-                p.setResponsable(responsable);
+            if (dtoP.getTareas().size() > 0) {
+                throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin tareas asignadas.");
+            } else if (dtoP.getUsuarios().size() > 0) {
+                throw new EntidadModificadaIncorrectamenteException("Un proyecto debe crearse sin usuarios asignados.");
+            } else {
                 try {
-                    p2 = persistencia.buscarProyecto(dtoP.getNombre(), responsable);
-                } catch (EJBException e) {
-                    throw new NoExisteEntidadException(e.getMessage(), e);
-                }
-                try {
-                    List<Usuario> listaUsuarios = persistencia.buscarUsuariosDeProyecto(p2.getNombre(), p2.getResponsable());
-                    p.setUsuarios(listaUsuarios);
-                    List<Tarea> listaTareas = persistencia.buscarTareasDeProyecto(p2);
-                    p.setTareas(listaTareas);
-                } catch (EJBException e) {
-                    throw new NoExisteEntidadException(e.getMessage());
-                }
-                Long id = p2.getId();
-                p.setId(id);
-                
-                try {
-                    persistencia.modificarProyecto(p);
+                    Proyecto p = aEntidadSB.transformarProyecto(dtoP);
+                    Usuario responsable = persistencia.buscarUsuario(p.getResponsable().getNombreUsuario());
+                    p.setResponsable(responsable);
+                    try {
+                        p2 = persistencia.buscarProyecto(dtoP.getNombre(), responsable);
+                    } catch (EJBException e) {
+                        throw new NoExisteEntidadException(e.getMessage(), e);
+                    }
+                    try {
+                        List<Usuario> listaUsuarios = persistencia.buscarUsuariosDeProyecto(p2.getNombre(), p2.getResponsable());
+                        p.setUsuarios(listaUsuarios);
+                        List<Tarea> listaTareas = persistencia.buscarTareasDeProyecto(p2);
+                        p.setTareas(listaTareas);
+                    } catch (EJBException e) {
+                        throw new NoExisteEntidadException(e.getMessage(), e);
+                    }
+                    Long id = p2.getId();
+                    p.setId(id);
+
+                    try {
+                        persistencia.modificarProyecto(p);
+                    } catch (EJBException e) {
+                        throw new NoExisteEntidadException("Error inesperado al modificar el proyecto. Por favor intente nuevamente", e);
+                    }
                     
-                } catch (Exception e) {
-                    throw new NoExisteEntidadException("WTF", e);
+                } catch (NoResultException e) {
+                    throw new NoExisteEntidadException("No se encontró el usuario", e);
                 }
-            } catch (NoResultException e) {
-                throw new NoExisteEntidadException();
             }
         }
     }
-    
+
     @Override
     public void asignarUsuarioAProyecto(String nombreProyecto, String nombreResponsable, String nombreUsuario) throws NoExisteEntidadException {
         try {
@@ -144,7 +163,7 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
             p.setUsuarios(listaUsuarios);
             persistencia.modificarProyecto(p);
         } catch (EJBException e) {
-            throw new NoExisteEntidadException(e.getMessage());
+            throw new NoExisteEntidadException(e.getMessage(), e);
         }
     }
 
@@ -167,15 +186,15 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 t.setProyecto(p);
                 persistencia.agregarTarea(t);
             } catch (EntityExistsException e) {
-                throw new ExisteEntidadException("Ya existe una tarea con este nombre para este proyecto.");
-            } catch (PersistenceException p) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ya existe una tarea con este nombre para este proyecto.", e);
+            } catch (PersistenceException e) {
+                throw new ExisteEntidadException("Ocurrió un error al agregar la tarea. Por favor intente nuevemante", e);
             } catch (Exception e) {
-                throw new ExisteEntidadException();
+                throw new ExisteEntidadException("Ocurrió un error inesperado al agregar la tarea. Por favor intente nuevemante", e);
             }
         }
     }
-    
+
     @Override
     public void borrarTarea(String nombreTarea, String nombreProyecto, String nombreResponsable, String nombreEliminador) throws NoExisteEntidadException, EntidadEliminadaIncorrectamenteException {
         try {
@@ -195,15 +214,32 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 throw new EntidadEliminadaIncorrectamenteException("El usuario que elimina la tarea debe ser responsable de ella");
             }
         } catch (EJBException | EntityNotFoundException e) {
-            throw new NoExisteEntidadException("No se encontró la tarea a borrar");
+            throw new NoExisteEntidadException("No se encontró la tarea a borrar", e);
         }
     }
-    
+
     @Override
-    public DtoTarea buscarTarea(String nombreTarea) throws NoExisteEntidadException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public DtoTarea buscarTarea(String nombreTarea, String nombreProyecto, DtoUsuario responsable) throws NoExisteEntidadException {
+        try {
+            
+            Usuario usuarioResponsable = persistencia.buscarUsuario(responsable.getNombreUsuario());
+            Proyecto p = persistencia.buscarProyecto(nombreProyecto, usuarioResponsable);
+            Tarea t = persistencia.buscarTarea(nombreTarea, p);
+            if (usuarioResponsable == null) {
+                throw new NoExisteEntidadException("No se encontró el usuario responsable.");
+            } else if (p == null) {
+                throw new NoExisteEntidadException("No se encontró el proyecto con ese nombre.");
+            } else if(t==null){
+                throw new NoExisteEntidadException("No se encontró la tarea con ese nombre.");
+            }else {
+                DtoTarea dto = aDtoSB.transformarTarea(t);
+                return dto;
+            }
+        } catch (EntityNotFoundException e) {
+            throw new NoExisteEntidadException("No se encontro el proyecto", e);
+        }
     }
-    
+
     @Override
     public void modificarTarea(DtoTarea dtoT, String nombreUsuarioModificador) throws NoExisteEntidadException, EntidadModificadaIncorrectamenteException {
         Tarea t2;
@@ -232,20 +268,20 @@ public class ABMRealizablesSB implements ABMRealizablesSBLocal {
                 }
                 Long id = t2.getId();
                 t.setId(id);
-                
+
                 Usuario modificador = persistencia.buscarUsuario(nombreUsuarioModificador);
                 if (t.getListaResponsables().contains(modificador)) {
                     try {
                         persistencia.modificarTarea(t);
-                        
-                    } catch (Exception e) {
-                        throw new NoExisteEntidadException("WTF", e);
+
+                    } catch (EJBException e) {
+                        throw new NoExisteEntidadException("No se pudo modificar la tarea.", e);
                     }
                 } else {
                     throw new EntidadModificadaIncorrectamenteException("El usuario que modifica debe ser responsable de la tarea");
                 }
             } catch (NoResultException e) {
-                throw new NoExisteEntidadException();
+                throw new NoExisteEntidadException("No se encontró la tarea a modificar", e);
             }
         }
     }

@@ -785,12 +785,16 @@ exists or setup the property manually. For example like this:
             <property name="deploy.on.save" value="false"/>
         </ant>
         <ant antfile="${project.EasyTasksPersistenciaJPA}/build.xml" inheritall="false" target="dist"/>
+        <ant antfile="${project.EasyTasksSocial}/build.xml" inheritall="false" target="dist"/>
     </target>
     <target depends="init" if="dist.ear.dir" name="-deps-ear-jar" unless="no.deps">
         <ant antfile="${project.DataTransferObjects}/build.xml" inheritall="false" target="jar">
             <property name="deploy.on.save" value="false"/>
         </ant>
         <ant antfile="${project.EasyTasksPersistenciaJPA}/build.xml" inheritall="false" target="dist-ear">
+            <property location="${build.dir}" name="dist.ear.dir"/>
+        </ant>
+        <ant antfile="${project.EasyTasksSocial}/build.xml" inheritall="false" target="dist-ear">
             <property location="${build.dir}" name="dist.ear.dir"/>
         </ant>
     </target>
@@ -807,19 +811,23 @@ exists or setup the property manually. For example like this:
     <target if="is.jars.in.ejbjar" name="-library-inclusion-in-archive-by-user">
         <copyfiles files="${reference.DataTransferObjects.jar}" todir="${build.classes.dir}"/>
         <copyfiles files="${reference.EasyTasksPersistenciaJPA.dist}" todir="${build.classes.dir}"/>
+        <copyfiles files="${reference.EasyTasksSocial.dist}" todir="${build.classes.dir}"/>
     </target>
     <target if="is.server.weblogic" name="-library-inclusion-in-archive-weblogic">
         <basename file="${reference.DataTransferObjects.jar}" property="manifest.reference.DataTransferObjects.jar"/>
         <basename file="${reference.EasyTasksPersistenciaJPA.dist}" property="manifest.reference.EasyTasksPersistenciaJPA.dist"/>
+        <basename file="${reference.EasyTasksSocial.dist}" property="manifest.reference.EasyTasksSocial.dist"/>
         <manifest file="${build.ear.classes.dir}/META-INF/MANIFEST.MF" mode="update">
-            <attribute name="Extension-List" value="jar-1 jar-2 "/>
+            <attribute name="Extension-List" value="jar-1 jar-2 jar-3 "/>
             <attribute name="jar-1-Extension-Name" value="${manifest.reference.DataTransferObjects.jar}"/>
             <attribute name="jar-2-Extension-Name" value="${manifest.reference.EasyTasksPersistenciaJPA.dist}"/>
+            <attribute name="jar-3-Extension-Name" value="${manifest.reference.EasyTasksSocial.dist}"/>
         </manifest>
     </target>
     <target depends="compile" name="library-inclusion-in-manifest">
         <copyfiles files="${reference.DataTransferObjects.jar}" todir="${dist.ear.dir}/lib"/>
         <copyfiles files="${reference.EasyTasksPersistenciaJPA.dist}" todir="${dist.ear.dir}"/>
+        <copyfiles files="${reference.EasyTasksSocial.dist}" todir="${dist.ear.dir}"/>
         <manifest file="${build.ear.classes.dir}/META-INF/MANIFEST.MF" mode="update"/>
     </target>
     <target name="-copy-meta-inf">
@@ -1205,6 +1213,7 @@ exists or setup the property manually. For example like this:
     <target depends="init" name="deps-clean" unless="no.deps">
         <ant antfile="${project.DataTransferObjects}/build.xml" inheritall="false" target="clean"/>
         <ant antfile="${project.EasyTasksPersistenciaJPA}/build.xml" inheritall="false" target="clean"/>
+        <ant antfile="${project.EasyTasksSocial}/build.xml" inheritall="false" target="clean"/>
     </target>
     <target depends="init" name="-do-clean">
         <delete dir="${build.dir}"/>
